@@ -46,7 +46,7 @@ def check_password():
         st.warning("🔒 Inserisci la password per accedere al database.")
         password = st.text_input("Password", type="password")
         if st.button("Accedi"):
-            if password == "Suinsucchio": # <--- CAMBIA QUI LA TUA PASSWORD
+            if password == "olimpiadi2040": # <--- CAMBIA QUI LA TUA PASSWORD
                 st.session_state["password_correct"] = True
                 st.rerun()
             else:
