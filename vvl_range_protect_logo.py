@@ -7,7 +7,7 @@ from streamlit_gsheets import GSheetsConnection
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E RIMOZIONE MENU GITHUB
 # ==========================================
-st.set_page_config(page_title="V.V.L. Commander", page_icon="⛳", layout="centered")
+st.set_page_config(page_title="V.V.L. Commander", page_icon="logo.png", layout="centered")
 
 # Questo blocco nasconde il menu in alto a destra (i tre puntini e l'icona GitHub) e il footer
 hide_st_style = """
@@ -152,3 +152,4 @@ if not df.empty:
     # Mostriamo gli ultimi colpi grezzi
     with st.expander("Vedi tutti i colpi registrati"):
         st.dataframe(df.tail(10)) # Mostra gli ultimi 10
+
