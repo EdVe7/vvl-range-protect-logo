@@ -1,0 +1,16 @@
+[theme]
+# Il colore principale del tuo brand (il turchese del logo)
+# Usato per bottoni, slider e link attivi.
+primaryColor = "#2CB8C8"
+
+# Il colore di sfondo dell'app (bianco come il logo)
+backgroundColor = "#FFFFFF"
+
+# Il colore di sfondo per i box di input e la sidebar (grigio chiarissimo pulito)
+secondaryBackgroundColor = "#F8F9FA"
+
+# Il colore del testo (grigio scuro per leggibilità)
+textColor = "#262730"
+
+# Font moderno e pulito
+font = "sans serif"
