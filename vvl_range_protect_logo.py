@@ -93,7 +93,8 @@ if not check_password():
 # ==========================================
 # 4. CONNESSIONE DATI
 # ==========================================
-conn = st.connection("gsheets", type=GSheetsConnection)
+# Cerca questa riga nel blocco 'if submit:' e cambiala così:
+conn.update(worksheet="Foglio1", data=df_aggiornato)
 try:
     df = conn.read()
 except Exception as e:
@@ -165,3 +166,4 @@ if not df.empty:
 
 else:
     st.info("Inizia a registrare i tuoi colpi dalla barra laterale per vedere le statistiche.")
+
