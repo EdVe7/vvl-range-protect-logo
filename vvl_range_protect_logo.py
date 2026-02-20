@@ -1,169 +1,105 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import time
 from streamlit_gsheets import GSheetsConnection
+from datetime import datetime, timedelta
 
-# ==========================================
-# 1. CONFIGURAZIONE E BRANDING
-# ==========================================
-# Cambia 'logo.png' con l'URL della tua immagine o il percorso locale
-LOGO_PATH = "logo.png" 
-PRIMARY_COLOR = "#1E5631"  # Verde Golf Professionale
-ACCENT_COLOR = "#D4AF37"   # Oro/Sabbia per i dettagli
+# 1. SETUP ESTETICO
+st.set_page_config(page_title="V.V.L. Commander", page_icon="logo.png", layout="centered")
 
-st.set_page_config(
-    page_title="V.V.L. Commander", 
-    page_icon="⛳", 
-    layout="wide", # Layout largo per vedere meglio i grafici
-    initial_sidebar_state="collapsed"
-)
-
-# CSS Custom per iniettare i tuoi colori nell'interfaccia
-st.markdown(f"""
+hide_ui = """
     <style>
-    .stApp {{ background-color: #f8f9fa; }}
-    .stButton>button {{
-        background-color: {PRIMARY_COLOR};
-        color: white;
-        border-radius: 10px;
-        border: none;
-        height: 3em;
-        width: 100%;
-    }}
-    .stMetric {{
-        background-color: white;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
-    }}
-    [data-testid="stHeader"] {{ background: rgba(0,0,0,0); }}
-    #MainMenu {{visibility: hidden;}}
-    footer {{visibility: hidden;}}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
     </style>
-    """, unsafe_allow_html=True)
+"""
+st.markdown(hide_ui, unsafe_allow_html=True)
 
-# ==========================================
-# 2. SPLASH SCREEN OTTIMIZZATO
-# ==========================================
-if 'splash_done' not in st.session_state:
+# 2. SPLASH SCREEN (SOLO LOGO)
+if 'splash' not in st.session_state:
     placeholder = st.empty()
     with placeholder.container():
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
-        col_s1, col_s2, col_s3 = st.columns([1,2,1])
-        with col_s2:
-            # Mostra logo se esiste, altrimenti titolo stilizzato
-            try:
-                st.image(LOGO_PATH, use_container_width=True)
-            except:
-                st.markdown(f"<h1 style='text-align: center; color: {PRIMARY_COLOR};'>V.V.L. COMMANDER</h1>", unsafe_allow_html=True)
-            
-            st.markdown(f"<h3 style='text-align: center; color: {ACCENT_COLOR};'>Target: Olimpiadi 2040</h3>", unsafe_allow_html=True)
-            st.markdown("<p style='text-align: center;'>Inizializzazione sistema di puntamento...</p>", unsafe_allow_html=True)
-            progress_bar = st.progress(0)
-            for percent_complete in range(100):
-                time.sleep(0.02)
-                progress_bar.progress(percent_complete + 1)
-    
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        try:
+            st.image("logo.png", use_container_width=True)
+        except:
+            st.write("Caricamento V.V.L. Commander...")
+    time.sleep(3)
     placeholder.empty()
-    st.session_state['splash_done'] = True
+    st.session_state['splash'] = True
 
-# ==========================================
-# 3. LOGICA DI ACCESSO
-# ==========================================
-def check_password():
-    if "password_correct" not in st.session_state:
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            st.markdown("### 🔒 Area Riservata")
-            password = st.text_input("Inserisci la password di comando", type="password")
-            if st.button("Sblocca Database"):
-                if password == "olimpiadi2040":
-                    st.session_state["password_correct"] = True
-                    st.rerun()
-                else:
-                    st.error("Accesso negato.")
-        return False
-    return True
-
-if not check_password():
-    st.stop()
-
-# ==========================================
-# 4. CONNESSIONE DATI
-# ==========================================
-# Cerca questa riga nel blocco 'if submit:' e cambiala così:
-conn.update(worksheet="Foglio1", data=df_aggiornato)
-try:
-    df = conn.read()
-except Exception as e:
-    st.error("Connessione Cloud non riuscita. Verifica i Secrets.")
-    st.stop()
-
-# ==========================================
-# 5. DASHBOARD PRINCIPALE
-# ==========================================
-# Sidebar per inserimento rapido
-with st.sidebar:
-    try: st.image(LOGO_PATH, width=150)
-    except: st.title("⛳ V.V.L.")
-    st.header("Nuova Registrazione")
-    with st.form("golf_form", clear_on_submit=True):
-        bastone = st.selectbox("Bastone", ["Driver", "Legno 3", "Ibrido", "Ferro 4", "Ferro 5", "Ferro 6", "Ferro 7", "Ferro 8", "Ferro 9", "PW", "GW", "SW", "LW"])
-        lunghezza = st.number_input("Distanza (m)", min_value=0, step=1)
-        impatto = st.selectbox("Impatto", ["Centro", "Punta", "Tacco", "Top", "Zolla"])
-        errore = st.selectbox("Traiettoria", ["Dritto", "Draw", "Fade", "Hook", "Slice", "Push", "Pull"])
-        voto = st.select_slider("Qualità", options=[1, 2, 3, 4, 5], value=3)
-        
-        submit = st.form_submit_button("REGISTRA COLPO")
-        if submit:
-            nuovo_colpo = pd.DataFrame([{
-                "Data": pd.Timestamp.now().strftime("%d/%m/%Y %H:%M"),
-                "Bastone": bastone, "Lunghezza": lunghezza, "Impatto": impatto, "Errore": errore, "Voto": voto
-            }])
-            df_aggiornato = pd.concat([df, nuovo_colpo], ignore_index=True)
-            conn.update(data=df_aggiornato)
-            st.success("Dato inviato!")
-            time.sleep(1)
+# 3. PASSWORD
+if "auth" not in st.session_state:
+    pwd = st.text_input("Inserisci Password", type="password")
+    if st.button("Sblocca"):
+        if pwd == "olimpiadi2040":
+            st.session_state["auth"] = True
             st.rerun()
+        else:
+            st.error("Password Errata")
+    st.stop()
 
-# --- Area Visualizzazione ---
-st.title("📊 Analisi Performance Operativa")
+# 4. CONNESSIONE DATI (IL FIX PER VEDERE I DATI VECCHI)
+conn = st.connection("gsheets", type=GSheetsConnection)
+# ttl=0 costringe l'app a scaricare TUTTO ogni volta, senza dimenticare i giorni passati
+df = conn.read(ttl=0)
 
+# Pulizia date: fondamentale per il filtro "Ultimi 7 giorni"
 if not df.empty:
-    # KPI Veloci
-    col_m1, col_m2, col_m3 = st.columns(3)
-    col_m1.metric("Colpi Totali", len(df))
-    col_m2.metric("Distanza Max", f"{df['Lunghezza'].max()} m")
-    col_m3.metric("Voto Medio", f"{round(df['Voto'].mean(), 1)} / 5")
+    df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
+    df = df.dropna(subset=['Data'])
 
-    tab1, tab2 = st.tabs(["📈 Analisi Tecnica", "📋 Registro Storico"])
+# 5. FORM INSERIMENTO
+st.title("⛳ V.V.L. Range Commander")
+with st.form("input_form", clear_on_submit=True):
+    col1, col2 = st.columns(2)
+    with col1:
+        bastone = st.selectbox("Bastone", ["Driver", "Legno 3", "Ibrido", "Ferro 4", "Ferro 5", "Ferro 6", "Ferro 7", "Ferro 8", "Ferro 9", "PW", "GW", "SW", "LW"])
+        dist = st.number_input("Distanza (m)", value=0)
+        voto = st.select_slider("Voto", options=[1, 2, 3, 4, 5], value=3)
+    with col2:
+        imp = st.selectbox("Impatto", ["Centro", "Punta", "Tacco", "Top", "Fatta"])
+        err = st.selectbox("Errore", ["Dritto", "Hook", "L-Hook", "Slice", "L-Slice", "Push", "Pull"])
+    
+    if st.form_submit_button("REGISTRA COLPO 🚀"):
+        nuovo = pd.DataFrame([{"Data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Bastone": bastone, "Lunghezza": dist, "Impatto": imp, "Errore": err, "Voto": voto}])
+        df_update = pd.concat([df, nuovo], ignore_index=True)
+        conn.update(data=df_update)
+        st.success("Salvato!")
+        time.sleep(1)
+        st.rerun()
 
-    with tab1:
+# 6. ANALISI (QUELLA CHE TI PIACEVA)
+if not df.empty:
+    st.divider()
+    scelta = st.radio("Periodo:", ["Tutti i dati", "Ultimi 7 giorni"], horizontal=True)
+    
+    if scelta == "Ultimi 7 giorni":
+        limite = datetime.now() - timedelta(days=7)
+        df_view = df[df['Data'] >= limite]
+    else:
+        df_view = df
+
+    if not df_view.empty:
+        # TABELLA CON DEVIAZIONE STANDARD (COSTANZA)
+        st.subheader("📋 Performance")
+        report = df_view.groupby('Bastone').agg({'Lunghezza': ['mean', 'std'], 'Voto': 'mean', 'Errore': lambda x: x.mode()[0] if not x.mode().empty else "-"}).reset_index()
+        report.columns = ["Ferro", "Media Dist", "Costanza (Std)", "Voto Medio", "Errore Tipico"]
+        st.dataframe(report.round(1).fillna(0), use_container_width=True, hide_index=True)
+
+        # GRAFICI
         c1, c2 = st.columns(2)
-        
         with c1:
-            st.subheader("Distanza Media per Bastone")
-            # Grafico a barre orizzontali professionale
-            avg_dist = df.groupby('Bastone')['Lunghezza'].mean().sort_values().reset_index()
-            fig_bar = px.bar(avg_dist, x='Lunghezza', y='Bastone', orientation='h',
-                             color_continuous_scale='Greens', color='Lunghezza',
-                             text_auto='.0f')
-            fig_bar.update_layout(showlegend=False, height=400, margin=dict(l=0, r=0, t=30, b=0))
-            st.plotly_chart(fig_bar, use_container_width=True)
-
+            st.subheader("🍕 Voti %")
+            fig_p = px.pie(df_view, names='Voto', hole=0.3, color_discrete_sequence=px.colors.sequential.Teal_r)
+            st.plotly_chart(fig_p, use_container_width=True)
         with c2:
-            st.subheader("Distribuzione Precisione")
-            error_count = df['Errore'].value_counts().reset_index()
-            fig_pie = px.pie(error_count, values='count', names='Errore', hole=.4,
-                             color_discrete_sequence=px.colors.sequential.Greens_r)
-            fig_pie.update_layout(height=400, margin=dict(l=0, r=0, t=30, b=0))
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-    with tab2:
-        st.dataframe(df.sort_index(ascending=False), use_container_width=True)
-
-else:
-    st.info("Inizia a registrare i tuoi colpi dalla barra laterale per vedere le statistiche.")
-
+            st.subheader("🎯 Dispersione")
+            map_err = {"Pull":-3, "Hook":-2, "L-Hook":-1, "Dritto":0, "L-Slice":1, "Slice":2, "Push":3}
+            df_view['ex'] = df_view['Errore'].map(map_err)
+            fig_s = px.scatter(df_view, x='ex', y='Lunghezza', color='Bastone', size='Voto')
+            fig_s.update_xaxes(tickvals=[-3,-2,-1,0,1,2,3], ticktext=["Pull","Hook","LH","Dritto","LS","Slice","Push"])
+            st.plotly_chart(fig_s, use_container_width=True)
