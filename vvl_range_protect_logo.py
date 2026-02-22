@@ -14,15 +14,20 @@ from streamlit_gsheets import GSheetsConnection
 # ==============================================================================
 st.set_page_config(page_title="V.V.L. Commander Pro", page_icon="⛳", layout="centered")
 
+# ==============================================================================
+# MODIFICA SOLO QUESTI VALORI PER CAMBIARE I COLORI DI TUTTA L'APP
+# ==============================================================================
 COLORS = {
-    'Navy': '#1E3A8A',       
-    'Green': '#15803D',      
-    'Orange': '#C2410C',     
-    'Blue': '#2563EB',       
-    'Red': '#DC2626',        
-    'Grey': '#F3F4F6',
-    'Gold': '#F59E0B'        
-}
+    'Navy': '#20B2AA',       # Verde Acqua (usato per Header e Splash)
+    'Green': '#20B2AA',      # Verde Acqua (usato per i successi/Putting)
+    'Orange': '#DAA520',     # Oro scuro (usato per Short Game)
+    'Blue': '#40E0D0',       # Turchese/Verde Acqua chiaro (usato per il Range)
+    'Red': '#DC2626',        # Rosso (rimane per gli errori critici/Shank)
+    'Grey': '#F9F9F9',       # Bianco sporco/Grigio chiarissimo per gli sfondi
+    'Gold': '#FFD700',       # Oro brillante (usato per accenti e stelle)
+    'White': '#FFFFFF'       # Bianco puro
+} 
+
 
 st.markdown(f"""
 <style>
@@ -252,3 +257,4 @@ with tab_an:
 if st.sidebar.button("LOGOUT"):
     st.session_state["logged_in"] = False
     st.rerun()
+
