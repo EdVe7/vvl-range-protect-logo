@@ -29,25 +29,79 @@ COLORS = {
 } 
 
 
+# --- SOSTITUISCI IL VECCHIO st.markdown CON QUESTO ---
+
 st.markdown(f"""
 <style>
-    .stApp {{ background-color: #FFFFFF; color: #111827; }}
-    h1, h2, h3 {{ font-family: 'Helvetica', sans-serif; color: {COLORS['Navy']}; }}
+    /* 1. NASCONDE GLI ELEMENTI DI SISTEMA (GITHUB, MENU, FOOTER) */
+    #MainMenu {{visibility: hidden;}}
+    header {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+    
+    /* 2. REGOLA LO SPAZIO IN ALTO */
+    .block-container {{
+        padding-top: 2rem;
+    }}
+
+    /* 3. STILE GENERALE APP (BIANCO E COLORI LOGO) */
+    .stApp {{ 
+        background-color: #FFFFFF; 
+        color: #111827; 
+    }}
+    
+    h1, h2, h3 {{ 
+        font-family: 'Helvetica', sans-serif; 
+        color: #20B2AA; /* Verde Acqua */
+    }}
+    
+    /* 4. STILE RADIO BUTTONS (BOTTONI SCELTA) */
     div[role="radiogroup"] label {{
-        font-size: 15px !important; padding: 8px 12px;
-        background-color: {COLORS['Grey']}; border-radius: 6px; margin: 3px;
+        font-size: 15px !important; 
+        padding: 8px 12px;
+        background-color: #F9F9F9; /* Bianco sporco */
+        border-radius: 6px; 
+        margin: 3px;
         border: 1px solid #e5e7eb;
     }}
+    
+    /* Effetto al passaggio del mouse sui bottoni */
+    div[role="radiogroup"] label:hover {{ 
+        border-color: #20B2AA; 
+        background-color: #f0fdfa; 
+    }}
+    
+    /* 5. STILE BOTTONE PRINCIPALE DI REGISTRAZIONE */
     .stButton>button {{
-        background-color: {COLORS['Navy']}; color: white; font-size: 20px !important; 
-        padding: 12px 0; border-radius: 8px; font-weight: bold; width: 100%; border: none;
+        color: white; 
+        font-size: 20px !important; 
+        padding: 12px 0;
+        border-radius: 8px; 
+        font-weight: bold; 
+        width: 100%; 
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }}
+
+    /* 6. STILE BOX STATISTICHE (METRICHE) */
     .metric-box {{
-        background: white; border: 1px solid #e5e7eb; border-radius: 8px;
-        padding: 15px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: white; 
+        border: 1px solid #e5e7eb; 
+        border-radius: 8px;
+        padding: 15px; 
+        text-align: center; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }}
-    .metric-num {{ font-size: 1.8rem; font-weight: 800; color: {COLORS['Navy']}; }}
-    .metric-lbl {{ font-size: 0.8rem; text-transform: uppercase; color: #6b7280; }}
+    .metric-num {{ 
+        font-size: 1.8rem; 
+        font-weight: 800; 
+        color: #20B2AA; /* Verde Acqua */
+    }}
+    .metric-lbl {{ 
+        font-size: 0.8rem; 
+        text-transform: uppercase; 
+        color: #DAA520; /* Oro */
+        letter-spacing: 0.5px;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -257,4 +311,5 @@ with tab_an:
 if st.sidebar.button("LOGOUT"):
     st.session_state["logged_in"] = False
     st.rerun()
+
 
