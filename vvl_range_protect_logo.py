@@ -4,20 +4,22 @@ import plotly.express as px
 from fpdf import FPDF
 import datetime
 import time
+import os
 import numpy as np
 from streamlit_gsheets import GSheetsConnection
 
 # ==============================================================================
-# 1. CONFIGURAZIONE, COLORI E STILI (Teal, Gold, White)
+# 1. CONFIGURAZIONE E STILI (Colori basati sul tuo Logo)
 # ==============================================================================
-st.set_page_config(page_title="V.V.L. Commander Pro", page_icon="⛳", layout="wide")
+st.set_page_config(page_title="V.V.L. Sport Science", page_icon="⛳", layout="wide")
 
 COLORS = {
-    'Teal': '#20B2AA',   
-    'Gold': '#DAA520',   
-    'White': '#FFFFFF',  
-    'Red': '#DC2626',    
-    'Grey': '#F9F9F9'    
+    'BrandTeal': '#3AB4B8',  # Colore estratto dal tuo logo
+    'DarkTeal': '#2A8285',
+    'White': '#FFFFFF',
+    'Grey': '#F3F4F6',
+    'Warning': '#F59E0B',
+    'Error': '#EF4444'
 }
 
 st.markdown(f"""
@@ -26,34 +28,38 @@ st.markdown(f"""
     header {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     .block-container {{ padding-top: 2rem; }}
-    .stApp {{ background-color: {COLORS['White']}; color: #111827; }}
-    h1, h2, h3 {{ font-family: 'Helvetica', sans-serif; color: {COLORS['Teal']}; }}
-    .stButton>button {{ background-color: {COLORS['Teal']}; color: white; border-radius: 8px; font-weight: bold; width: 100%; border: none; padding: 10px; }}
-    .metric-box {{ background: {COLORS['Grey']}; border-left: 5px solid {COLORS['Gold']}; border-radius: 5px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }}
-    .metric-title {{ font-size: 0.9rem; color: #6b7280; text-transform: uppercase; font-weight: bold; }}
-    .metric-value {{ font-size: 1.5rem; color: {COLORS['Teal']}; font-weight: 800; }}
+    .stApp {{ background-color: {COLORS['White']}; color: #1f2937; }}
+    h1, h2, h3 {{ font-family: 'Helvetica', sans-serif; color: {COLORS['BrandTeal']}; }}
+    .stButton>button {{ background-color: {COLORS['BrandTeal']}; color: white; border-radius: 8px; font-weight: bold; width: 100%; border: none; padding: 12px; }}
+    .stButton>button:hover {{ background-color: {COLORS['DarkTeal']}; }}
+    .metric-box {{ background: {COLORS['Grey']}; border-left: 4px solid {COLORS['BrandTeal']}; border-radius: 4px; padding: 15px; text-align: center; }}
+    .metric-title {{ font-size: 0.85rem; color: #6b7280; text-transform: uppercase; font-weight: bold; }}
+    .metric-value {{ font-size: 1.8rem; color: {COLORS['BrandTeal']}; font-weight: 800; }}
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 2. COSTANTI E OPZIONI
+# 2. COSTANTI DATI
 # ==============================================================================
-COLUMNS = ['User', 'Date', 'SessionName', 'Time', 'Category', 'Club_Dist', 'Impact', 'Trajectory', 'Length_Speed', 'Proximity', 'Error_Dir', 'Rating']
-CATEGORIES = ["LONG GAME", "SHORT GAME", "PUTTING"]
+COLUMNS = ['User', 'Date', 'SessionName', 'Time', 'Category', 'Club', 'Start_Dist', 'Lie', 'Impact', 'Curvature', 'Height', 'Direction', 'Proximity', 'Rating']
+CATEGORIES = ["LONG GAME / RANGE", "SHORT GAME", "PUTTING"]
+CLUBS = ["DR", "3W", "5W", "7W", "3H", "3i", "4i", "5i", "6i", "7i", "8i", "9i", "PW", "AW", "GW", "SW", "LW"]
 
 # ==============================================================================
-# 3. SPLASH SCREEN & LOGIN
+# 3. SPLASH SCREEN (Con Logo V.V.L.) & LOGIN
 # ==============================================================================
 if "splash_done" not in st.session_state:
     placeholder = st.empty()
     with placeholder.container():
-        st.markdown(f"""
-        <div style='background-color:{COLORS['Teal']}; height:90vh; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:15px;'>
-            <h1 style='color:{COLORS['White']}; font-size: 4rem; margin-bottom:0;'>V.V.L.</h1>
-            <h2 style='color:{COLORS['Gold']}; font-size: 1.5rem; margin-top:0;'>COMMANDER PRO ANALYTICS</h2>
-        </div>
-        """, unsafe_allow_html=True)
-    time.sleep(2)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            # Cerca il logo, se non c'è mostra un testo di fallback
+            if os.path.exists("logo.png"):
+                st.image("logo.png", use_container_width=True)
+            else:
+                st.markdown(f"<h1 style='text-align:center; font-size: 5rem; color:{COLORS['BrandTeal']};'>V.V.L.</h1><p style='text-align:center;'>SPORT SCIENCE SOLUTIONS</p>", unsafe_allow_html=True)
+            st.markdown("<div style='text-align:center; margin-top:20px;'><div class='spinner'></div>Caricamento Moduli Analitici...</div>", unsafe_allow_html=True)
+    time.sleep(2.5)
     placeholder.empty()
     st.session_state["splash_done"] = True
 
@@ -61,32 +67,34 @@ if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 
 if not st.session_state["logged_in"]:
-    st.title("🔒 Area Riservata V.V.L.")
-    user_input = st.text_input("Nome Atleta").upper().strip()
-    pass_input = st.text_input("Password", type="password")
-    if st.button("ACCEDI"):
-        if pass_input == "olimpiadi2040" and user_input != "":
-            st.session_state["logged_in"] = True
-            st.session_state["user"] = user_input
-            st.rerun()
-        else:
-            st.error("Credenziali non valide.")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if os.path.exists("logo.png"): st.image("logo.png", width=200)
+        st.markdown("### Accesso Piattaforma Pro")
+        user_input = st.text_input("ID Atleta (Nome)").upper().strip()
+        pass_input = st.text_input("Master Password", type="password")
+        if st.button("AUTENTICAZIONE"):
+            if pass_input == "olimpiadi2040" and user_input != "":
+                st.session_state["logged_in"] = True
+                st.session_state["user"] = user_input
+                st.rerun()
+            else:
+                st.error("Credenziali respinte.")
     st.stop()
 
 # ==============================================================================
 # 4. DATA ENGINE (Google Sheets)
 # ==============================================================================
-@st.cache_data(ttl=5) # Aggiorna i dati ogni 5 secondi
+@st.cache_data(ttl=5)
 def load_data():
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = conn.read(ttl=0)
-        # Assicuriamoci che la colonna Date sia in formato datetime per i filtri
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce').dt.date
         df['Rating'] = pd.to_numeric(df['Rating'], errors='coerce')
+        df['Proximity'] = pd.to_numeric(df['Proximity'], errors='coerce')
         return df
     except Exception as e:
-        st.error(f"Errore di connessione: {e}")
         return pd.DataFrame(columns=COLUMNS)
 
 def save_shot(shot_data):
@@ -98,181 +106,198 @@ def save_shot(shot_data):
     st.cache_data.clear()
 
 # ==============================================================================
-# 5. GENERATORE PDF PROFESSIONALE
+# 5. GENERATORE REPORT PDF (Avanzato per i Pro)
 # ==============================================================================
 class PDFReport(FPDF):
     def header(self):
-        self.set_font('Arial', 'B', 16)
-        self.set_text_color(32, 178, 170) # Teal
-        self.cell(0, 10, 'V.V.L. COMMANDER - PERFORMANCE REPORT', 0, 1, 'C')
-        self.set_draw_color(218, 165, 32) # Gold
-        self.line(10, 20, 200, 20)
-        self.ln(10)
+        self.set_font('Arial', 'B', 14)
+        self.set_text_color(58, 180, 184) # Teal VVL
+        self.cell(0, 8, 'V.V.L. SPORT SCIENCE - ANALISI BIOMECCANICA E PERFORMANCE', 0, 1, 'C')
+        self.set_draw_color(200, 200, 200)
+        self.line(10, 18, 200, 18)
+        self.ln(5)
 
-def generate_pdf(df, user, period_name):
+def calc_perc(df, col, val):
+    if len(df) == 0: return 0.0
+    return (len(df[df[col] == val]) / len(df)) * 100
+
+def generate_pro_pdf(df, user, period_name):
     pdf = PDFReport()
     pdf.add_page()
-    pdf.set_font('Arial', '', 11)
+    pdf.set_font('Arial', 'B', 10)
     pdf.set_text_color(0, 0, 0)
-    pdf.cell(0, 8, f"Atleta: {user} | Periodo Analizzato: {period_name} | Data Report: {datetime.date.today()}", ln=True)
+    pdf.cell(0, 6, f"ATLETA: {user}   |   PERIODO: {period_name}   |   DATA: {datetime.date.today()}", ln=True)
     pdf.ln(5)
 
     for cat in CATEGORIES:
         df_cat = df[df['Category'] == cat]
-        pdf.set_font('Arial', 'B', 14)
-        pdf.set_text_color(218, 165, 32) # Gold
-        pdf.cell(0, 10, f"ANALISI: {cat}", ln=True)
+        if df_cat.empty: continue
+
+        pdf.set_font('Arial', 'B', 12)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_fill_color(58, 180, 184)
+        pdf.cell(0, 8, f" REPARTO: {cat} ", 0, 1, 'L', fill=True)
         pdf.set_text_color(0, 0, 0)
         
-        if df_cat.empty:
-            pdf.set_font('Arial', 'I', 10)
-            pdf.cell(0, 8, "Nessun dato registrato in questo periodo.", ln=True)
-            pdf.ln(5)
-            continue
-            
         tot = len(df_cat)
-        avg_rating = df_cat['Rating'].mean()
-        std_dev = df_cat['Rating'].std() if tot > 1 else 0.0
-        err_comune = df_cat['Error_Dir'].mode()[0] if not df_cat['Error_Dir'].empty and df_cat['Error_Dir'].mode()[0] != "-" else "N/A"
-        prox_comune = df_cat['Proximity'].mode()[0] if not df_cat['Proximity'].empty and df_cat['Proximity'].mode()[0] != "-" else "N/A"
-        perc_top = (len(df_cat[df_cat['Rating'] == 3]) / tot) * 100
+        avg_voto = df_cat['Rating'].mean()
+        
+        pdf.set_font('Arial', '', 9)
+        pdf.cell(0, 6, f"Volumi Sessione: {tot} colpi | Voto Medio: {avg_voto:.2f}/3.0 | Esecuzioni Perfette (Voto 3): {calc_perc(df_cat, 'Rating', 3):.1f}%", ln=True)
+        
+        # Statistiche Generali di Categoria
+        if cat in ["LONG GAME / RANGE", "SHORT GAME"]:
+            pdf.cell(0, 5, f"Impatti: Solido {calc_perc(df_cat, 'Impact', 'Solido'):.1f}% | Punta {calc_perc(df_cat, 'Impact', 'Punta'):.1f}% | Tacco {calc_perc(df_cat, 'Impact', 'Tacco'):.1f}% | Flappa {calc_perc(df_cat, 'Impact', 'Flappa'):.1f}%", ln=True)
+            pdf.cell(0, 5, f"Traiettorie: Dritta {calc_perc(df_cat, 'Curvature', 'Dritta'):.1f}% | Slice {calc_perc(df_cat, 'Curvature', 'Slice'):.1f}% | Hook {calc_perc(df_cat, 'Curvature', 'Hook'):.1f}% | Push {calc_perc(df_cat, 'Curvature', 'Push'):.1f}%", ln=True)
+            
+            # Analisi Specifica per Bastone
+            pdf.ln(3)
+            pdf.set_font('Arial', 'B', 9)
+            pdf.cell(0, 6, "ANALISI DETTAGLIATA PER BASTONE (Medie e Tendenze):", ln=True)
+            pdf.set_font('Arial', '', 8)
+            clubs_used = df_cat['Club'].unique()
+            for c in clubs_used:
+                df_c = df_cat[df_cat['Club'] == c]
+                if not df_c.empty:
+                    m_voto = df_c['Rating'].mean()
+                    m_prox = df_c['Proximity'].mean()
+                    top_imp = df_c['Impact'].mode()[0] if not df_c['Impact'].empty else "N/A"
+                    top_curv = df_c['Curvature'].mode()[0] if not df_c['Curvature'].empty else "N/A"
+                    perc_dritta = calc_perc(df_c, 'Curvature', 'Dritta')
+                    pdf.cell(0, 5, f" > {c}: {len(df_c)} colpi | Voto: {m_voto:.1f} | Prox Media: {m_prox:.1f}m | Tendenza Effetto: {top_curv} (Dritte: {perc_dritta:.0f}%) | Impatto Frequente: {top_imp}", ln=True)
 
-        pdf.set_font('Arial', '', 10)
-        pdf.cell(0, 6, f"- Colpi Totali: {tot}", ln=True)
-        pdf.cell(0, 6, f"- Media Voto: {avg_rating:.2f} / 3.0  (Deviazione Standard: {std_dev:.2f})", ln=True)
-        pdf.cell(0, 6, f"- Esecuzioni Perfette (Voto 3): {perc_top:.1f}%", ln=True)
-        pdf.cell(0, 6, f"- Errore Direzionale più frequente: {err_comune}", ln=True)
-        pdf.cell(0, 6, f"- Proximity tipica / più frequente: {prox_comune}", ln=True)
-        pdf.ln(5)
-
+        elif cat == "PUTTING":
+            pdf.cell(0, 5, f"Impatti: Centro {calc_perc(df_cat, 'Impact', 'Centro'):.1f}% | Punta {calc_perc(df_cat, 'Impact', 'Punta'):.1f}% | Tacco {calc_perc(df_cat, 'Impact', 'Tacco'):.1f}%", ln=True)
+            pdf.cell(0, 5, f"Traiettoria (Linea): Dritta {calc_perc(df_cat, 'Curvature', 'Dritta'):.1f}% | Push {calc_perc(df_cat, 'Curvature', 'Push'):.1f}% | Pull {calc_perc(df_cat, 'Curvature', 'Pull'):.1f}%", ln=True)
+            
+            pdf.ln(3)
+            pdf.set_font('Arial', 'B', 9)
+            pdf.cell(0, 6, "ANALISI DETTAGLIATA PER DISTANZA INIZIALE:", ln=True)
+            pdf.set_font('Arial', '', 8)
+            dists = df_cat['Start_Dist'].unique()
+            for d in sorted(dists):
+                df_d = df_cat[df_cat['Start_Dist'] == d]
+                if not df_d.empty:
+                    m_voto = df_d['Rating'].mean()
+                    top_traj = df_d['Curvature'].mode()[0] if not df_d['Curvature'].empty else "N/A"
+                    perc_buca = calc_perc(df_d, 'Rating', 3)
+                    pdf.cell(0, 5, f" > Da {d}m: {len(df_d)} putts | Voto Medio: {m_voto:.1f} | Imbucati: {perc_buca:.0f}% | Errore Linea Frequente: {top_traj}", ln=True)
+        pdf.ln(8)
+    
     return pdf.output(dest='S').encode('latin-1')
 
 # ==============================================================================
-# 6. INTERFACCIA UTENTE PRINCIPALE
+# 6. INTERFACCIA APP
 # ==============================================================================
-st.sidebar.title(f"👤 {st.session_state['user']}")
-session_name = st.sidebar.text_input("Nome Sessione", "Allenamento Standard")
+st.sidebar.markdown(f"### 👤 Atleta: {st.session_state['user']}")
+session_name = st.sidebar.text_input("Sessione / Note", "Test Valutazione")
 
-tab_in, tab_an = st.tabs(["📥 INSERIMENTO DATI", "📊 ANALISI & REPORT"])
+tab_in, tab_an = st.tabs(["🎯 REGISTRO TELEMETRIA", "📊 ANALYTICS & REPORT"])
 
-# --- TAB 1: INSERIMENTO ---
+# --- TAB 1: INSERIMENTO DATI ---
 with tab_in:
-    cat_scelta = st.selectbox("Seleziona Area di Gioco", CATEGORIES)
+    cat_scelta = st.radio("Seleziona Area Tecnica", CATEGORIES, horizontal=True)
     
-    with st.form("form_inserimento", clear_on_submit=True):
-        col1, col2 = st.columns(2)
+    with st.form("form_dati", clear_on_submit=True):
+        col1, col2, col3 = st.columns(3)
         
-        if cat_scelta == "LONG GAME":
+        # Valori di default
+        start_dist = 0.0; lie = "-"; height = "-"; direction = "-"
+
+        if cat_scelta == "LONG GAME / RANGE":
             with col1:
-                club = st.selectbox("Bastone", ["Driver", "Legni", "Ibridi", "Ferri Lunghi", "Ferri Corti", "Wedges"])
-                impact = st.selectbox("Impatto", ["Solido", "Top", "Flappa", "Tacco", "Punta", "Shank"])
+                club = st.selectbox("Bastone", CLUBS)
+                impact = st.selectbox("Impatto", ["Solido", "Punta", "Tacco", "Shank", "Flappa", "Top"])
             with col2:
-                traj = st.selectbox("Traiettoria", ["Dritta", "Draw", "Fade", "Pull", "Push", "Hook", "Slice"])
-                length = st.selectbox("Lunghezza", ["Giusta", "Corta", "Lunga"])
-            prox = st.selectbox("Proximity (Distanza dal Target)", ["< 2m", "< 5m", "< 10m", "> 10m"])
-            err_dir = st.selectbox("Direzione Errore Principale", ["Nessuno (Target)", "Sinistra", "Destra"])
-            voto = st.slider("Voto Esecuzione", 1, 3, 2)
+                curvature = st.selectbox("Curvatura (Effetto)", ["Dritta", "Push", "Pull", "Slice", "Hook"])
+                height = st.selectbox("Altezza", ["Giusta", "Alta", "Bassa", "Rasoterra", "Flappa"])
+            with col3:
+                direction = st.selectbox("Direzione vs Target", ["Dritta", "Dx", "Sx"])
+                proximity = st.number_input("Proximity Target (metri)", min_value=0.0, max_value=400.0, step=1.0)
+            voto = st.slider("Voto Esecuzione (1=Scarso, 2=Accettabile, 3=Perfetto)", 1, 3, 2)
             
         elif cat_scelta == "SHORT GAME":
             with col1:
-                club = st.selectbox("Bastone", ["LW", "SW", "GW", "AW", "PW", "F9", "F8"])
-                impact = st.selectbox("Impatto", ["Solido", "Top", "Flappa", "Shank"])
+                club = st.selectbox("Bastone", ["LW", "SW", "GW", "AW", "PW", "9i", "8i"])
+                start_dist = st.number_input("Distanza di Partenza (metri)", min_value=1.0, max_value=100.0, step=1.0)
             with col2:
-                traj = st.selectbox("Lie di Partenza", ["Fairway", "Rough", "Bunker", "Sponda"]) # Usiamo traj per il Lie
-                length = st.selectbox("Controllo Distanza", ["Giusta", "Corta", "Lunga"])
-            prox = st.selectbox("Proximity (Risultato)", ["Data (<1m)", "Vicino (<3m)", "Ok (<5m)", "Fuori (<10m)"])
-            err_dir = "-"
-            voto = st.slider("Voto Esecuzione", 1, 3, 2)
+                lie = st.selectbox("Lie", ["Fairway", "Rough", "Bunker", "Sponda", "Collo"])
+                impact = st.selectbox("Impatto", ["Solido", "Punta", "Tacco", "Shank", "Flappa", "Top"])
+            with col3:
+                curvature = st.selectbox("Curvatura Volo", ["Dritta", "Push", "Pull", "Slice", "Hook"])
+                height = st.selectbox("Altezza", ["Giusta", "Alta", "Bassa", "Rasoterra", "Flappa"])
+            
+            c_bot1, c_bot2 = st.columns(2)
+            direction = c_bot1.selectbox("Direzione vs Target", ["Dritta", "Dx", "Sx"])
+            proximity = c_bot2.number_input("Proximity Finale (metri)", min_value=0.0, step=0.5)
+            voto = st.slider("Voto Esecuzione (1=Scarso, 2=Accettabile, 3=Perfetto)", 1, 3, 2)
             
         else: # PUTTING
-            club = st.selectbox("Distanza Iniziale", ["1m", "2m", "3m", "5m", "8m", "10m", ">15m"])
+            club = "Putter"
             with col1:
-                impact = st.selectbox("Impatto", ["Centro", "Punta", "Tacco"])
-                traj = st.selectbox("Linea", ["Corretta", "Push (Dx)", "Pull (Sx)"])
+                start_dist = st.number_input("Distanza dal Buco (metri)", min_value=0.5, step=0.5)
             with col2:
-                length = st.selectbox("Velocità", ["Perfetta", "Corta", "Lunga"])
-                prox = st.selectbox("Proximity Finale", ["Imbucato", "Data (<50cm)", "Lungo (>1m)", "Corto (>1m)"])
-            err_dir = "-"
-            voto = st.slider("Voto Esecuzione (3=Buca, 2=Data, 1=Errore)", 1, 3, 2)
+                impact = st.selectbox("Impatto sulla Faccia", ["Centro", "Punta", "Tacco"])
+            with col3:
+                curvature = st.selectbox("Traiettoria / Linea", ["Dritta", "Push", "Pull"])
+            
+            # Per il putt usiamo la proximity come risultato numerico
+            proximity = st.number_input("Proximity (Distanza residua in metri, 0 se in buca)", min_value=0.0, step=0.1)
+            voto = st.slider("Voto (3=Buca/Perfetto, 2=Data/Accettabile, 1=Errore)", 1, 3, 2)
 
-        if st.form_submit_button("REGISTRA COLPO"):
-            nuovo_colpo = {
-                'User': st.session_state['user'],
-                'Date': datetime.date.today(),
-                'SessionName': session_name,
-                'Time': datetime.datetime.now().strftime("%H:%M"),
-                'Category': cat_scelta,
-                'Club_Dist': club,
-                'Impact': impact,
-                'Trajectory': traj,
-                'Length_Speed': length,
-                'Proximity': prox,
-                'Error_Dir': err_dir,
-                'Rating': voto
+        if st.form_submit_button("SALVA COLPO NEL DATABASE"):
+            shot = {
+                'User': st.session_state['user'], 'Date': datetime.date.today(),
+                'SessionName': session_name, 'Time': datetime.datetime.now().strftime("%H:%M"),
+                'Category': cat_scelta, 'Club': club, 'Start_Dist': start_dist, 'Lie': lie,
+                'Impact': impact, 'Curvature': curvature, 'Height': height,
+                'Direction': direction, 'Proximity': proximity, 'Rating': voto
             }
-            save_shot(nuovo_colpo)
-            st.success("✅ Colpo registrato nel database!")
+            save_shot(shot)
+            st.success("✅ Metriche acquisite con successo.")
 
-# --- TAB 2: ANALISI ---
+# --- TAB 2: ANALISI & DASHBOARD ---
 with tab_an:
     df_all = load_data()
     df_user = df_all[df_all['User'] == st.session_state['user']]
     
-    # Filtro Temporale
-    periodo = st.radio("Seleziona Periodo di Analisi", ["Sessione Attuale", "Ultima Settimana", "Ultimo Mese", "Ultimo Anno", "Lifelong (Tutto)"], horizontal=True)
-    
+    periodo = st.selectbox("Filtro Temporale", ["Sessione Attuale", "Ultimi 7 Giorni", "Ultimi 30 Giorni", "Tutti i Dati (Lifelong)"])
     oggi = datetime.date.today()
-    if periodo == "Sessione Attuale":
-        df_filtered = df_user[df_user['SessionName'] == session_name]
-    elif periodo == "Ultima Settimana":
-        df_filtered = df_user[df_user['Date'] >= (oggi - datetime.timedelta(days=7))]
-    elif periodo == "Ultimo Mese":
-        df_filtered = df_user[df_user['Date'] >= (oggi - datetime.timedelta(days=30))]
-    elif periodo == "Ultimo Anno":
-        df_filtered = df_user[df_user['Date'] >= (oggi - datetime.timedelta(days=365))]
-    else:
-        df_filtered = df_user
+    if periodo == "Sessione Attuale": df_f = df_user[df_user['SessionName'] == session_name]
+    elif periodo == "Ultimi 7 Giorni": df_f = df_user[df_user['Date'] >= (oggi - datetime.timedelta(days=7))]
+    elif periodo == "Ultimi 30 Giorni": df_f = df_user[df_user['Date'] >= (oggi - datetime.timedelta(days=30))]
+    else: df_f = df_user
 
-    if df_filtered.empty:
-        st.warning("Nessun dato trovato per questo periodo/sessione.")
+    if df_f.empty:
+        st.warning("Nessun dato registrato nel periodo selezionato.")
     else:
-        # Download Report PDF
-        pdf_bytes = generate_pdf(df_filtered, st.session_state['user'], periodo)
-        st.download_button(label="📄 SCARICA REPORT PDF PROFESSIONALE", data=pdf_bytes, file_name=f"Report_{st.session_state['user']}_{periodo.replace(' ', '')}.pdf", mime="application/pdf")
+        # Tasto Download PDF (Massima Visibilità)
+        pdf_bytes = generate_pro_pdf(df_f, st.session_state['user'], periodo)
+        st.download_button("📄 SCARICA REPORT V.V.L. COMPLETO (PDF)", data=pdf_bytes, file_name=f"VVL_Report_{st.session_state['user']}.pdf", mime="application/pdf")
         st.divider()
 
-        # Analisi Visiva per Categoria (SOLO TORTE)
-        cat_analisi = st.selectbox("Seleziona Area per i Grafici", CATEGORIES)
-        df_plot = df_filtered[df_filtered['Category'] == cat_analisi]
-        
-        if not df_plot.empty:
+        # Selezione area per grafici a torta (Come richiesto, non tolti)
+        cat_grafici = st.radio("Dettaglio Grafici per Area", CATEGORIES, horizontal=True)
+        df_p = df_f[df_f['Category'] == cat_grafici]
+
+        if not df_p.empty:
             c1, c2, c3 = st.columns(3)
-            media = df_plot['Rating'].mean()
-            std = df_plot['Rating'].std() if len(df_plot) > 1 else 0.0
-            
-            with c1: st.markdown(f"<div class='metric-box'><div class='metric-title'>Media Voto</div><div class='metric-value'>{media:.2f}</div></div>", unsafe_allow_html=True)
-            with c2: st.markdown(f"<div class='metric-box'><div class='metric-title'>Deviazione Std.</div><div class='metric-value'>{std:.2f}</div></div>", unsafe_allow_html=True)
-            with c3: st.markdown(f"<div class='metric-box'><div class='metric-title'>Colpi Totali</div><div class='metric-value'>{len(df_plot)}</div></div>", unsafe_allow_html=True)
+            with c1: st.markdown(f"<div class='metric-box'><div class='metric-title'>Voto Medio</div><div class='metric-value'>{df_p['Rating'].mean():.2f}</div></div>", unsafe_allow_html=True)
+            with c2: st.markdown(f"<div class='metric-box'><div class='metric-title'>Colpi Registrati</div><div class='metric-value'>{len(df_p)}</div></div>", unsafe_allow_html=True)
+            with c3: 
+                prox_mean = df_p['Proximity'].mean()
+                st.markdown(f"<div class='metric-box'><div class='metric-title'>Proximity Media</div><div class='metric-value'>{prox_mean:.1f} m</div></div>", unsafe_allow_html=True)
 
-            col_chart1, col_chart2 = st.columns(2)
-            
-            with col_chart1:
-                # Torta dei Voti
-                fig_voti = px.pie(df_plot, names='Rating', hole=0.4, 
-                                  color='Rating', color_discrete_map={1: COLORS['Red'], 2: COLORS['Gold'], 3: COLORS['Teal']},
-                                  title="Distribuzione Qualità (Voti)")
-                fig_voti.update_traces(textinfo='percent+label')
-                st.plotly_chart(fig_voti, use_container_width=True)
-                
-            with col_chart2:
-                # Torta degli Impatti
-                fig_impatti = px.pie(df_plot, names='Impact', hole=0.4,
-                                     title="Distribuzione Tipologia Impatto")
-                fig_impatti.update_traces(textinfo='percent+label')
-                st.plotly_chart(fig_impatti, use_container_width=True)
+            col_g1, col_g2 = st.columns(2)
+            with col_g1:
+                fig_imp = px.pie(df_p, names='Impact', title="Analisi Impatti", hole=0.3, color_discrete_sequence=px.colors.sequential.Teal)
+                st.plotly_chart(fig_imp, use_container_width=True)
+            with col_g2:
+                fig_curv = px.pie(df_p, names='Curvature', title="Analisi Traiettorie/Effetti", hole=0.3, color_discrete_sequence=px.colors.sequential.Teal)
+                st.plotly_chart(fig_curv, use_container_width=True)
         else:
-            st.info(f"Nessun colpo registrato in {cat_analisi} per il periodo selezionato.")
+            st.info("Dati insufficienti in questa categoria per generare i grafici.")
 
-if st.sidebar.button("ESCI"):
+if st.sidebar.button("LOGOUT / CAMBIA UTENTE"):
     st.session_state["logged_in"] = False
     st.rerun()
