@@ -14,7 +14,7 @@ from streamlit_gsheets import GSheetsConnection
 # ==============================================================================
 # 1. CONFIGURAZIONE E STILI
 # ==============================================================================
-st.set_page_config(page_title="V.V.L. Sport Science", page_icon="⛳", layout="wide")
+st.set_page_config(page_title="Supernova Sport Science", page_icon="⛳", layout="wide")
 
 COLORS = {
     'BrandTeal': '#3AB4B8',  
@@ -60,8 +60,9 @@ if "splash_done" not in st.session_state:
         with col2:
             try:
                 st.image("logo.png", use_container_width=True)
+                st.markdown(f"<p style='text-align:center; font-style:italic; color:{COLORS['DarkTeal']}; font-weight:bold;'>Data over talent</p>", unsafe_allow_html=True)
             except:
-                st.markdown(f"<h1 style='text-align:center; font-size: 5rem; color:{COLORS['BrandTeal']};'>V.V.L.</h1><p style='text-align:center;'>SPORT SCIENCE SOLUTIONS</p>", unsafe_allow_html=True)
+                st.markdown(f"<h1 style='text-align:center; font-size: 5rem; color:{COLORS['BrandTeal']};'>SUPERNOVA</h1><p style='text-align:center;'>SPORT SCIENCE SOLUTIONS</p><p style='text-align:center; font-style:italic; color:{COLORS['DarkTeal']}; font-weight:bold;'>Data over talent</p>", unsafe_allow_html=True)
     time.sleep(2.0)
     placeholder.empty()
     st.session_state["splash_done"] = True
@@ -74,12 +75,13 @@ if not st.session_state["logged_in"]:
     with col2:
         try:
             st.image("logo.png", width=200)
+            st.markdown(f"<p style='text-align:center; font-style:italic; color:{COLORS['DarkTeal']}; font-weight:bold;'>Data over talent</p>", unsafe_allow_html=True)
         except: pass
         st.markdown("### Accesso Piattaforma Pro")
         user_input = st.text_input("ID Atleta (Nome)").upper().strip()
         pass_input = st.text_input("Master Password", type="password")
         if st.button("AUTENTICAZIONE"):
-            if pass_input == "v.v.l.analytics" and user_input != "":
+            if pass_input == "supernova.analytics" and user_input != "":
                 st.session_state["logged_in"] = True
                 st.session_state["user"] = user_input
                 st.rerun()
@@ -143,7 +145,7 @@ def create_seaborn_scatter(df, title):
     return tmp.name
 
 # ==============================================================================
-# 6. GENERATORE REPORT PDF (V.V.L. PRO)
+# 6. GENERATORE REPORT PDF (SUPERNOVA PRO)
 # ==============================================================================
 class PDFReport(FPDF):
     def header(self):
@@ -152,10 +154,16 @@ class PDFReport(FPDF):
         except: pass
         self.set_font('Arial', 'B', 14)
         self.set_text_color(218, 165, 32)
-        self.cell(0, 15, 'V.V.L. SPORT SCIENCE SOLUTIONS', 0, 1, 'R')
+        self.cell(0, 15, 'SUPERNOVA SPORT SCIENCE SOLUTIONS', 0, 1, 'R')
         self.set_draw_color(218, 165, 32)
         self.line(10, 32, 200, 32)
         self.ln(15) # Spazio dal logo/header al testo
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.set_text_color(58, 180, 184) # Verde Acqua / Teal
+        self.cell(0, 10, 'Data over talent', 0, 0, 'C')
 
 def calc_perc(df, col, val):
     if len(df) == 0: return 0.0
@@ -171,18 +179,23 @@ def generate_pro_pdf(df, user, period_name):
     pdf.ln(5)
 
     for cat in CATEGORIES:
-        df_cat = df[df['Category'] == cat]
-        if df_cat.empty: continue
-
         pdf.set_font('Arial', 'B', 12)
         pdf.set_text_color(255, 255, 255)
         pdf.set_fill_color(58, 180, 184)
         pdf.cell(0, 8, f" REPARTO: {cat} ", 0, 1, 'L', fill=True)
         pdf.set_text_color(0, 0, 0)
+        pdf.ln(2)
+
+        df_cat = df[df['Category'] == cat]
+        if df_cat.empty:
+            pdf.set_font('Arial', 'I', 10)
+            pdf.set_text_color(218, 165, 32) # Colore Oro per segnalare l'assenza di dati
+            pdf.cell(0, 8, f"Nessuno score registrato per questa area in questo periodo.", ln=True)
+            pdf.ln(8)
+            continue
         
         # Statistiche testuali
         pdf.set_font('Arial', '', 9)
-        pdf.ln(2)
         pdf.cell(0, 5, f"Volume: {len(df_cat)} colpi | Voto Medio: {df_cat['Rating'].mean():.2f}/3.0", ln=True)
         pdf.cell(0, 5, f"Efficienza (Voto 3): {calc_perc(df_cat, 'Rating', 3):.1f}%", ln=True)
         pdf.ln(5)
@@ -201,19 +214,28 @@ def generate_pro_pdf(df, user, period_name):
         pdf.image(img_curv, x=110, y=pdf.get_y(), w=85)
         pdf.set_y(pdf.get_y() + 65)
 
-        # Spiegazione Grafici
-        pdf.set_font('Arial', 'I', 8)
-        pdf.set_text_color(100, 100, 100)
-        pdf.multi_cell(0, 4, "Interpretazione: I grafici a torta mostrano la consistenza del punto di impatto e la curvatura predominante. Uno slice/push costante indica un errore di cammino/faccia sistematico; impatti decentrati suggeriscono instabilita del raggio dell'arco di swing.")
-        pdf.ln(5)
+        # Spiegazione Grafici staccata e colorata
+        pdf.ln(12)
+        pdf.set_font('Arial', 'I', 9)
+        pdf.set_fill_color(58, 180, 184) # Sfondo Verde Acqua
+        pdf.set_text_color(255, 255, 255) # Testo Bianco
+        pdf.multi_cell(0, 6, " Interpretazione:", 0, 'L', fill=True)
+        pdf.set_text_color(42, 130, 133) # Testo Dark Teal
+        pdf.multi_cell(0, 5, "I grafici a torta mostrano la consistenza del punto di impatto e la curvatura predominante. Uno slice/push costante indica un errore di cammino/faccia sistematico; impatti decentrati suggeriscono instabilita del raggio dell'arco di swing.")
+        pdf.ln(8)
 
         if cat in ["LONG GAME / RANGE", "SHORT GAME"]:
             img_scat = create_seaborn_scatter(df_cat, f"Mappa Dispersione Laterale - {cat}")
             pdf.image(img_scat, x=30, y=pdf.get_y(), w=150)
             pdf.set_y(pdf.get_y() + 85)
-            pdf.multi_cell(0, 4, "Mappa Dispersione: Rappresenta la distanza laterale dal target. L'obiettivo e raggruppare i punti sulla linea dorata (Target). Una dispersione ampia indica scarsa ripetibilita dinamica.")
+            
+            pdf.ln(10)
+            pdf.set_font('Arial', 'I', 9)
+            pdf.set_text_color(218, 165, 32) # Testo Oro
+            pdf.multi_cell(0, 5, "Mappa Dispersione: Rappresenta la distanza laterale dal target. L'obiettivo e raggruppare i punti sulla linea centrale. Una dispersione ampia indica scarsa ripetibilita dinamica.")
+            pdf.ln(5)
 
-        if pdf.get_y() > 230: pdf.add_page() # Salto pagina se spazio esaurito
+        if pdf.get_y() > 220: pdf.add_page() # Salto pagina se spazio esaurito
 
     # Script Finale per l'Atleta
     pdf.ln(10)
@@ -221,7 +243,7 @@ def generate_pro_pdf(df, user, period_name):
     pdf.set_fill_color(243, 244, 246)
     pdf.set_font('Arial', 'B', 11)
     pdf.set_text_color(58, 180, 184)
-    pdf.cell(0, 10, " MESSAGGIO DAL V.V.L. PERFORMANCE LAB ", 1, 1, 'C', fill=True)
+    pdf.cell(0, 10, " MESSAGGIO DAL SUPERNOVA PERFORMANCE LAB ", 1, 1, 'C', fill=True)
     pdf.set_font('Arial', 'I', 10)
     pdf.set_text_color(42, 130, 133)
     script_text = (
@@ -305,7 +327,7 @@ with tab_an:
 
     if not df_f.empty:
         pdf_bytes = generate_pro_pdf(df_f, st.session_state['user'], periodo)
-        st.download_button(" SCARICA REPORT V.V.L. COMPLETO (PDF)", data=pdf_bytes, file_name=f"VVL_Report_{st.session_state['user']}.pdf", mime="application/pdf")
+        st.download_button(" SCARICA REPORT SUPERNOVA COMPLETO (PDF)", data=pdf_bytes, file_name=f"Supernova_Report_{st.session_state['user']}.pdf", mime="application/pdf")
         st.divider()
 
         cat_grafici = st.radio("Dettaglio Grafici per Area", CATEGORIES, horizontal=True)
