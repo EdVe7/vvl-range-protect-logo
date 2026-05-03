@@ -1168,9 +1168,15 @@ def main() -> None:
             st.session_state.pop("user", None)
             st.rerun()
 
-    tab_in, tab_rev = st.tabs(["Inserimento dati", "Review"])
+    st.markdown("### Navigazione")
+    page = st.radio(
+        "Vai a",
+        ["Inserimento dati", "Review"],
+        horizontal=True,
+        label_visibility="collapsed",
+    )
 
-    with tab_in:
+    if page == "Inserimento dati":
         brand_header("Inserimento rapido")
         render_hero(
             "Sessione di raccolta dati",
@@ -1209,7 +1215,7 @@ def main() -> None:
                 wizard_putt(session_name, user)
             brand_footer()
 
-    with tab_rev:
+    else:
         brand_header()
         review_panel(user, session_name)
 
