@@ -1185,17 +1185,6 @@ def main() -> None:
             st.session_state.pop("user", None)
             st.rerun()
 
-    st.markdown("### Navigazione")
-    page_top = st.radio(
-        "Vai a",
-        ["Inserimento dati", "Review"],
-        horizontal=True,
-        index=0 if page == "Inserimento dati" else 1,
-        key="main_page_top",
-        label_visibility="collapsed",
-    )
-    page = page_top
-
     if page == "Inserimento dati":
         brand_header("Inserimento rapido")
         render_hero(
@@ -1242,3 +1231,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
