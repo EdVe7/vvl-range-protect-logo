@@ -30,6 +30,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+st.markdown(f"""
+    <style>
+    #MainMenu {{visibility: hidden;}} footer {{visibility: hidden;}} header {{visibility: hidden;}}
+    .stDeployButton {{display:none;}}
+    [data-testid="stToolbar"] {{visibility: hidden !important;}}
+    .stApp {{background: linear-gradient(180deg, #FFFFFF 0%, #FFFBEF 75%, #F8EFCF 100%);}}
+    </style>
+    """, unsafe_allow_html=True)
+
 GOLD = "#C9A227"
 GOLD_LIGHT = "#E8D48A"
 GOLD_DARK = "#8B6914"
